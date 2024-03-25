@@ -1,0 +1,166 @@
+/*
+		Hardcoded prioritised-rule behaviour, in use before 8 June 2020. 
+
+		if(knowsgoal() && isclustered() && docluster && dochase && doflee) {
+			accel(same_color_com_x, same_color_com_y, clust); 
+			accel(chase_color_com_x, chase_color_com_y, chase); 
+			accel(flee_color_com_x, flee_color_com_y, -flee); 
+			accel(last_goal_x, last_goal_y, goal, goal_cap); 
+			current_rule_state = "KNOWSGOAL, ISCLUST, CLUST, CHASE, FLEE"; 
+		} else if(knowsgoal() && isclustered() && docluster && dochase) {
+			accel(same_color_com_x, same_color_com_y, clust); 
+			accel(chase_color_com_x, chase_color_com_y, chase); 
+			accel(last_goal_x, last_goal_y, goal, goal_cap); 
+			current_rule_state = "KNOWSGOAL, ISCLUST, CLUST, CHASE"; 
+		} else if(knowsgoal() && isclustered() && docluster && doflee) {
+			accel(same_color_com_x, same_color_com_y, clust); 
+			accel(flee_color_com_x, flee_color_com_y, -flee); 
+			accel(last_goal_x, last_goal_y, goal, goal_cap); 
+			current_rule_state = "KNOWSGOAL, ISCLUST, CLUST, FLEE"; 
+		} else if(knowsgoal() && isclustered() && dochase && doflee) {
+			accel(chase_color_com_x, chase_color_com_y, chase); 
+			accel(flee_color_com_x, flee_color_com_y, -flee); 
+			accel(last_goal_x, last_goal_y, goal, goal_cap); 
+			current_rule_state = "KNOWSGOAL, ISCLUST, CHASE, FLEE"; 
+		} else if(knowsgoal() && isclustered() && docluster) {
+			accel(same_color_com_x, same_color_com_y, clust); 
+			accel(last_goal_x, last_goal_y, goal, goal_cap); 
+			current_rule_state = "KNOWSGOAL, ISCLUST, CLUST"; 
+		} else if(knowsgoal() && isclustered() && dochase) {
+			accel(chase_color_com_x, chase_color_com_y, chase); 
+			accel(last_goal_x, last_goal_y, goal, goal_cap); 
+			current_rule_state = "KNOWSGOAL, ISCLUST, CHASE"; 
+		} else if(knowsgoal() && isclustered() && doflee) {
+			accel(flee_color_com_x, flee_color_com_y, -flee); 
+			accel(last_goal_x, last_goal_y, goal, goal_cap); 
+			current_rule_state = "KNOWSGOAL, ISCLUST, FLEE"; 
+		} else if(isclustered() && docluster && dochase && doflee) {
+			accel(same_color_com_x, same_color_com_y, clust); 
+			accel(chase_color_com_x, chase_color_com_y, chase); 
+			accel(flee_color_com_x, flee_color_com_y, -flee); 
+			current_rule_state = "ISCLUST, CLUST, CHASE, FLEE"; 
+		} else if(isclustered() && docluster && dochase) {
+			accel(same_color_com_x, same_color_com_y, clust); 
+			accel(chase_color_com_x, chase_color_com_y, chase); 
+			current_rule_state = "ISCLUST, CLUST, CHASE"; 
+		} else if(isclustered() && docluster && doflee) {
+			accel(same_color_com_x, same_color_com_y, clust); 
+			accel(flee_color_com_x, flee_color_com_y, -flee); 
+			current_rule_state = "ISCLUST, CLUST, FLEE"; 
+		} else if(isclustered() && dochase && doflee) {
+			accel(chase_color_com_x, chase_color_com_y, chase); 
+			accel(flee_color_com_x, flee_color_com_y, -flee); 
+			current_rule_state = "ISCLUST, CHASE, FLEE"; 
+		} else if(isclustered() && docluster) {
+			accel(same_color_com_x, same_color_com_y, clust); 
+			current_rule_state = "ISCLUST, CLUST"; 
+		} else if(isclustered() && dochase) {
+			accel(chase_color_com_x, chase_color_com_y, chase); 
+			current_rule_state = "ISCLUST, CHASE"; 
+		} else if(isclustered() && doflee) {
+			accel(flee_color_com_x, flee_color_com_y, -flee); 
+			current_rule_state = "ISCLUST, CHASE"; 
+		} else if(docluster) {
+			accel(same_color_com_x, same_color_com_y, clust); 
+			current_rule_state = "CLUST"; 
+		} else {
+			current_rule_state = "SEEKING"; 
+		}
+		*/
+
+/*
+	//Old algorithm governing cluster_agents behaviour, before 4 June 2020. 
+	
+	void rules_old() {
+		//Handle being near to walls or not. 
+		if(fabs(x - grx) < wr) { //Right wall. 
+			const_dx += -wall; 
+		} else if(fabs(x - -grx) < wr) { //Left wall. 
+			const_dx += wall; 
+		} else if(fabs(y - gry) < wr) { //Bottom wall. 
+			const_dy += -wall; 
+		} else if(fabs(y - -gry) < wr) { //Top wall. 
+			const_dy += wall; 
+		} else { //Not near to a wall. 
+			const_dx += rng_r_fast() * jitter; 
+			const_dy += rng_r_fast() * jitter; 
+		}
+
+		//Motion gets set to the preserved value each tick. 
+		dx = const_dx; 
+		dy = const_dy; 
+		//Adjust motion to cluster with same color. 
+		if(same_color_count > 0.0) { //These lines are because C.O.M.s were initalised to zero, and therefore if particles don't see any neighbours, they will want to go to the center. 
+			dx += (same_color_com_x - x) * clust; //AN: Use a bell curve so they work to maintain a distance from each other better? 
+			dy += (same_color_com_y - y) * clust; 
+		}
+		//If the particle is clustered. 
+		if(isclustered()) {
+			//Adjust motion to chase other colours. 
+			if(chase_color_count > 0.0) {
+				dx += (chase_color_com_x - x) * chase; 
+				dy += (chase_color_com_y - y) * chase; 
+			}
+			//Adjust motion to flee from other colours. 
+			if(flee_color_count > 0.0) {
+				dx += -(flee_color_com_x - x) * flee; 
+				dy += -(flee_color_com_y - y) * flee; 
+			}
+			//Adjust motion to seek the goal region, if encountered. 
+			if(knowsgoal()) {
+				//Compute capped velocity towards goal. 
+				double goal_dx = (last_goal_x - x) * goal; 
+				double goal_dy = (last_goal_y - y) * goal; 
+				double speed = sqrt(goal_dx*goal_dx + goal_dy*goal_dy); 
+				if(speed > goal_cap) {
+					//Create unit vector. 
+					goal_dx /= speed; 
+					goal_dy /= speed; 
+					//Multiply by speed cap. 
+					goal_dx *= cap; 
+					goal_dy *= cap; 
+				}
+				dx += goal_dx; 
+				dy += goal_dy; 
+			}
+		}
+		//Ensure preserved velocity doesn't get too high. 
+		double speed = sqrt(const_dx*const_dx + const_dy*const_dy); 
+		if(speed > const_cap) {
+			//Create unit vector. 
+			const_dx /= speed; 
+			const_dy /= speed; 
+			//Multiply by speed cap. 
+			const_dx *= const_cap; 
+			const_dy *= const_cap; 
+		}
+		//Ensure total velocity doesn't get too high. 
+		speed = sqrt(dx*dx + dy*dy); 
+		if(speed > cap) {
+			//Create unit vector. 
+			dx /= speed; 
+			dy /= speed; 
+			//Multiply by speed cap. 
+			dx *= cap; 
+			dy *= cap; 
+		}
+	}
+
+*/
+
+/*
+Constants in use before 8 June 2020. 
+
+//Speed caps. 
+double cap = 1.0; //Final-total-summed speed cap for agents (After summing). 
+double const_cap = 5.0; //Speed cap for conserved velocity of agents (Before summing). 
+double goal_cap = 20.0; //Speed cap for goal-seeking velocity (Before summing). 
+//Scalars for tickwise velocity-components. 
+double jitter = 0.15; //Scalar for jittering velocity. 
+double clust = 0.70; //Scalar for clustering velocity. 
+double chase = 0.25; //Scalar for chasing velocity. 
+double flee = 0.30; //Scalar for fleeing velocity. 
+double goal = 0.50; //Scalar for goal-seeking velocity. 
+//Acceleration constraints. 
+double wall = 0.10; //Acceleration away from walls. 
+*/
